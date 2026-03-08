@@ -30,6 +30,7 @@ Sources:
 Write the research report now.
 """
 
+
 class Synthesizer:
     def __init__(self, client: GeminiClient):
         self.client = client
@@ -41,7 +42,7 @@ class Synthesizer:
         # Prepare findings text with source attribution
         findings_lines = []
         unique_sources = []
-        
+
         # Helper to get source index
         def get_source_idx(url: str):
             if url not in unique_sources:
@@ -49,22 +50,21 @@ class Synthesizer:
             return unique_sources.index(url) + 1
 
         for f in findings:
-            idx = get_source_idx(f.url if hasattr(f, 'url') else "Unknown")
+            idx = get_source_idx(f.url if hasattr(f, "url") else "Unknown")
             findings_lines.append(f"- {f.claim} (Evidence: {f.evidence}) [{idx}]")
-            
+
         findings_text = "\n".join(findings_lines)
-        sources_text = "\n".join([f"{i}. {url}" for i, url in enumerate(unique_sources, 1)])
+        sources_text = "\n".join(
+            [f"{i}. {url}" for i, url in enumerate(unique_sources, 1)]
+        )
 
         prompt = SYNTHESIS_USER_PROMPT.format(
-            query=query,
-            findings_text=findings_text,
-            sources_text=sources_text
+            query=query, findings_text=findings_text, sources_text=sources_text
         )
-        
+
         try:
             report_text = await self.client.generate_content(
-                prompt=prompt,
-                system_instruction=SYNTHESIS_SYSTEM_PROMPT
+                prompt=prompt, system_instruction=SYNTHESIS_SYSTEM_PROMPT
             )
             return report_text
         except Exception as e:

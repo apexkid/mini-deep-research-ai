@@ -32,6 +32,7 @@ Page content:
 Extract findings relevant to the research question.
 """
 
+
 class Extractor:
     def __init__(self, client: GeminiClient, config: Config):
         self.client = client
@@ -45,29 +46,31 @@ class Extractor:
         max_chars = self.config.max_chars_per_page
         truncated_text = page.text[:max_chars]
         if len(page.text) > max_chars:
-            truncated_text += f"\n\n[Content truncated due to length (max {max_chars} chars)...]"
+            truncated_text += (
+                f"\n\n[Content truncated due to length (max {max_chars} chars)...]"
+            )
 
         prompt = EXTRACTION_USER_PROMPT.format(
             query=query,
             title=page.title or "Untitled",
             url=page.url,
-            text=truncated_text
+            text=truncated_text,
         )
-        
+
         try:
             result = await self.client.generate_structured(
                 prompt=prompt,
                 response_model=FindingList,
-                system_instruction=EXTRACTION_SYSTEM_PROMPT
+                system_instruction=EXTRACTION_SYSTEM_PROMPT,
             )
-            
+
             # Manually attach URL to findings as the LLM doesn't do it
             findings = []
             for f in result.findings:
                 f_dict = f.model_dump()
-                f_dict['url'] = page.url
+                f_dict["url"] = page.url
                 findings.append(Finding(**f_dict))
-                
+
             return findings
         except Exception as e:
             logger.error(f"Error during extraction from {page.url}: {str(e)}")
