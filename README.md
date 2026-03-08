@@ -33,6 +33,14 @@ You can run the agent using the `deep_research` command or via `python -m deep_r
 deep_research "What are the economics of vertical farming in 2025?"
 ```
 
+## Features (In Development)
+
+- [x] CLI Shell & Project Scaffold
+- [x] Tavily Search Integration
+- [x] Page Fetching & Content Extraction
+- [ ] Gemini Finding Extraction
+- [ ] Report Synthesis & Markdown Output
+- [ ] Query Planning & Iterative Research Loop
 
 ## CLI Reference
 
