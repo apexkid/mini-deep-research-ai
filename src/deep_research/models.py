@@ -9,6 +9,8 @@ class Config(BaseModel):
     max_chars_per_page: int = 8000
     max_concurrent_fetches: int = 5
     fetch_timeout: int = 10
+    max_searches: int = 30
+    max_depth: int = 2 # Number of research iterations per sub-question
 
 class SearchResult(BaseModel):
     url: str

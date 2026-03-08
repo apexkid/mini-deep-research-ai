@@ -24,6 +24,8 @@ class Orchestrator:
         self.planner = Planner(self.client)
         self.gap_analyzer = GapAnalyzer(self.client)
         self.visited_urls: Set[str] = set()
+        self.search_count = 0
+        self.budget_exhausted = False
 
     def _sort_sub_questions(self, sub_questions: List[SubQuestion]) -> List[SubQuestion]:
         """Sorts sub-questions by priority: High (0) > Medium (1) > Low (2)."""
@@ -35,7 +37,15 @@ class Orchestrator:
         findings: List[Finding] = []
         
         for search_query in queries:
-            console.print(f"  [dim]Searching: {search_query}[/dim]")
+            if self.search_count >= self.config.max_searches:
+                if not self.budget_exhausted:
+                    console.print(f"\n[bold red][BUDGET][/bold red] {self.search_count}/{self.config.max_searches} searches used, stopping research.")
+                    self.budget_exhausted = True
+                return findings
+
+            self.search_count += 1
+            console.print(f"  [dim]Searching ({self.search_count}/{self.config.max_searches}): {search_query}[/dim]")
+            
             search_results = await search_tavily(search_query, self.config.tavily_api_key)
             
             if not search_results:
@@ -87,24 +97,31 @@ class Orchestrator:
         
         # --- SEQUENTIAL RESEARCH LOOP ---
         for i, sq in enumerate(sorted_sqs, 1):
+            if self.budget_exhausted:
+                break
+
             console.print(f"\n[bold blue][STEP {i}/{len(sorted_sqs)}][/bold blue] Researching: {sq.question}")
             
             # Initial research for the sub-question
             sq_findings = await self._research_queries(sq.question, sq.queries)
             
             # --- GAP ANALYSIS & FOLLOW-UP LOOP ---
-            console.print(f"  [bold yellow][GAP][/bold yellow] Analyzing results for: {sq.question}")
-            gap_analysis = await self.gap_analyzer.analyze_gaps(sq.question, sq_findings)
-            
-            if not gap_analysis.is_satisfied and gap_analysis.follow_up_queries:
+            current_depth = 1
+            while current_depth < self.config.max_depth and not self.budget_exhausted:
+                console.print(f"  [bold yellow][GAP][/bold yellow] Analyzing results (depth {current_depth}) for: {sq.question}")
+                gap_analysis = await self.gap_analyzer.analyze_gaps(sq.question, sq_findings)
+                
+                if gap_analysis.is_satisfied or not gap_analysis.follow_up_queries:
+                    console.print(f"  [bold green][GAP][/bold green] Sub-question satisfied.")
+                    break
+                
                 console.print(f"  [bold yellow][GAP][/bold yellow] Missing: {gap_analysis.explanation}")
                 console.print(f"  [bold yellow][GAP][/bold yellow] Running follow-up research with {len(gap_analysis.follow_up_queries)} queries...")
                 
                 follow_up_findings = await self._research_queries(sq.question, gap_analysis.follow_up_queries)
                 sq_findings.extend(follow_up_findings)
                 console.print(f"  [cyan]Follow-up complete: {len(follow_up_findings)} new findings.[/cyan]")
-            else:
-                console.print(f"  [bold green][GAP][/bold green] Sub-question satisfied.")
+                current_depth += 1
 
             console.print(f"  [cyan]Sub-question complete: {len(sq_findings)} total findings.[/cyan]")
             all_findings.extend(sq_findings)
@@ -114,10 +131,12 @@ class Orchestrator:
             return
             
         console.print(f"\n[bold cyan]Final Synthesis: {len(all_findings)} findings from {len(self.visited_urls)} sources.[/bold cyan]")
+        if self.budget_exhausted:
+            console.print("[bold red][BUDGET] Note: Research was cut short due to budget limits.[/bold red]")
         
         # --- SYNTHESIS STEP ---
         console.print(f"[bold green]Synthesizing final report...[/bold green]")
-        report_md = await self.synthesizer.synthesize_report(query, all_findings)
+        report_md = await self.synthesizer.synthesize_report(query, all_findings, budget_exhausted=self.budget_exhausted)
         
         # --- OUTPUT STEP ---
         os.makedirs("output", exist_ok=True)
