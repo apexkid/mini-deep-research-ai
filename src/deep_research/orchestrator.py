@@ -11,6 +11,7 @@ from deep_research.extractor import Extractor
 from deep_research.synthesizer import Synthesizer
 from deep_research.planner import Planner
 from deep_research.gap_analyzer import GapAnalyzer
+from langfuse import observe, get_client
 
 logger = logging.getLogger(__name__)
 console = Console()
@@ -107,10 +108,19 @@ class Orchestrator:
                 
         return new_findings
 
+    @observe()
     async def run(self, query: str):
         """
         Runs the full research pipeline.
         """
+        # Set trace metadata
+        langfuse = get_client()
+        langfuse.update_current_trace(
+            name="deep_research_run",
+            input=query,
+            tags=[self.config.gemini_model]
+        )
+
         # --- PLANNING STEP ---
         console.print(f"[bold green][PLAN][/bold green] Decomposing query: {query}")
         plan = await self.planner.create_plan(query)
@@ -170,6 +180,11 @@ class Orchestrator:
         console.print(f"[bold green]Synthesizing final report...[/bold green]")
         report_md = await self.synthesizer.synthesize_report(query, all_findings, budget_exhausted=self.budget_exhausted)
         
+        # Update trace with final result count
+        langfuse.update_current_trace(
+            output=f"Generated report with {len(all_findings)} findings from {len(self.visited_urls)} sources."
+        )
+
         # --- OUTPUT STEP ---
         os.makedirs("output", exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

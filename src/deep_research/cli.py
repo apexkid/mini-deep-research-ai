@@ -1,8 +1,14 @@
 import click
 import asyncio
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded as early as possible
+load_dotenv()
+
 from rich.console import Console
 from deep_research.config import load_config
 from deep_research.orchestrator import Orchestrator
+from langfuse import get_client
 
 console = Console()
 
@@ -26,7 +32,9 @@ def main(query: str, searches: int, depth: int):
     """Deep Research Agent CLI."""
     try:
         asyncio.run(run_pipeline(query, searches, depth))
+        get_client().flush()
     except Exception:
+        get_client().flush()
         exit(1)
 
 if __name__ == "__main__":
