@@ -32,16 +32,42 @@ class Orchestrator:
         priority_map = {"high": 0, "medium": 1, "low": 2}
         return sorted(sub_questions, key=lambda sq: priority_map.get(sq.priority.lower(), 3))
 
-    async def _research_queries(self, question: str, queries: List[str]) -> List[Finding]:
+    def _is_duplicate(self, new_finding: Finding, existing_findings: List[Finding], threshold: float = 0.7) -> bool:
+        """
+        Checks if a finding is a duplicate of any existing findings.
+        Uses a simple Jaccard similarity on characters for speed.
+        """
+        new_claim = new_finding.claim.lower()
+        
+        for existing in existing_findings:
+            existing_claim = existing.claim.lower()
+            
+            # Substring check (one is inside the other)
+            if new_claim in existing_claim or existing_claim in new_claim:
+                return True
+            
+            # Simple character overlap check
+            set1 = set(new_claim)
+            set2 = set(existing_claim)
+            intersection = len(set1.intersection(set2))
+            union = len(set1.union(set2))
+            similarity = intersection / union if union > 0 else 0
+            
+            if similarity > threshold:
+                return True
+                
+        return False
+
+    async def _research_queries(self, question: str, queries: List[str], existing_findings: List[Finding]) -> List[Finding]:
         """Runs the search-fetch-extract cycle for a list of queries."""
-        findings: List[Finding] = []
+        new_findings: List[Finding] = []
         
         for search_query in queries:
             if self.search_count >= self.config.max_searches:
                 if not self.budget_exhausted:
                     console.print(f"\n[bold red][BUDGET][/bold red] {self.search_count}/{self.config.max_searches} searches used, stopping research.")
                     self.budget_exhausted = True
-                return findings
+                return new_findings
 
             self.search_count += 1
             console.print(f"  [dim]Searching ({self.search_count}/{self.config.max_searches}): {search_query}[/dim]")
@@ -71,9 +97,15 @@ class Orchestrator:
             for page in pages:
                 console.print(f"  [dim]Extracting from {page.url[:50]}...[/dim]")
                 extractor_findings = await self.extractor.extract_findings(question, page)
-                findings.extend(extractor_findings)
                 
-        return findings
+                # Deduplicate before adding
+                for f in extractor_findings:
+                    if not self._is_duplicate(f, existing_findings + new_findings):
+                        new_findings.append(f)
+                    else:
+                        logger.debug(f"Skipping duplicate finding: {f.claim[:50]}...")
+                
+        return new_findings
 
     async def run(self, query: str):
         """
@@ -103,7 +135,7 @@ class Orchestrator:
             console.print(f"\n[bold blue][STEP {i}/{len(sorted_sqs)}][/bold blue] Researching: {sq.question}")
             
             # Initial research for the sub-question
-            sq_findings = await self._research_queries(sq.question, sq.queries)
+            sq_findings = await self._research_queries(sq.question, sq.queries, all_findings)
             
             # --- GAP ANALYSIS & FOLLOW-UP LOOP ---
             current_depth = 1
@@ -118,7 +150,7 @@ class Orchestrator:
                 console.print(f"  [bold yellow][GAP][/bold yellow] Missing: {gap_analysis.explanation}")
                 console.print(f"  [bold yellow][GAP][/bold yellow] Running follow-up research with {len(gap_analysis.follow_up_queries)} queries...")
                 
-                follow_up_findings = await self._research_queries(sq.question, gap_analysis.follow_up_queries)
+                follow_up_findings = await self._research_queries(sq.question, gap_analysis.follow_up_queries, all_findings + sq_findings)
                 sq_findings.extend(follow_up_findings)
                 console.print(f"  [cyan]Follow-up complete: {len(follow_up_findings)} new findings.[/cyan]")
                 current_depth += 1
@@ -130,7 +162,7 @@ class Orchestrator:
             console.print("[yellow]No findings extracted from any sub-question.[/yellow]")
             return
             
-        console.print(f"\n[bold cyan]Final Synthesis: {len(all_findings)} findings from {len(self.visited_urls)} sources.[/bold cyan]")
+        console.print(f"\n[bold cyan]Final Synthesis: {len(all_findings)} unique findings from {len(self.visited_urls)} sources.[/bold cyan]")
         if self.budget_exhausted:
             console.print("[bold red][BUDGET] Note: Research was cut short due to budget limits.[/bold red]")
         

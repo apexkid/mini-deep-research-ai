@@ -39,8 +39,11 @@ deep_research "What are the economics of vertical farming in 2025?"
 - [x] Tavily Search Integration
 - [x] Page Fetching & Content Extraction
 - [x] Gemini Finding Extraction
-- [ ] Report Synthesis & Markdown Output
-- [ ] Query Planning & Iterative Research Loop
+- [x] Report Synthesis & Markdown Output
+- [x] Query Planning & Sequential Research
+- [x] Gap Analysis & Iterative Loops
+- [x] Budget Management & CLI Flags
+- [x] Improved Extraction & Deduplication
 
 ## CLI Reference
 

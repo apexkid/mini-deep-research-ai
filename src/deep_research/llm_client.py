@@ -85,6 +85,7 @@ class GeminiClient:
         prompt: str, 
         response_model: Type[T],
         system_instruction: Optional[str] = None,
+        temperature: Optional[float] = None,
     ) -> T:
         """
         Generates structured content validated against a Pydantic model with rate limiting.
@@ -95,10 +96,9 @@ class GeminiClient:
                 system_instruction=system_instruction,
                 response_mime_type="application/json",
                 response_schema=response_model,
+                temperature=temperature,
             )
             
-            # Note: The SDK currently might have issues with some model types and JSON mode
-            # If errors occur, we might need more specific handling here.
             response = await self.client.aio.models.generate_content(
                 model=self.model_name,
                 contents=prompt,

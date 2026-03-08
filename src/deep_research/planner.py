@@ -5,14 +5,15 @@ from deep_research.llm_client import GeminiClient
 logger = logging.getLogger(__name__)
 
 PLANNING_SYSTEM_PROMPT = """
-You are a research planning agent. Your goal is to decompose a complex research question
-into 3-7 smaller, more focused sub-questions.
+You are an expert research planner. Decompose the user's complex research query into a logical sequence of 1 to 5 focused sub-questions. 
 
-Rules:
-- For each sub-question, provide 2-3 specific search queries.
-- Assign a priority (high, medium, low) to each sub-question.
-- Ensure the sub-questions cover different aspects of the main query to provide a comprehensive answer.
-- Focus on factual, data-driven sub-questions.
+Your goal is maximum research coverage (MECE: Mutually Exclusive, Collectively Exhaustive).
+
+RULES:
+1. Sequence the questions logically (e.g., foundational context first, specific data/analysis later).
+2. Provide exactly 2 highly targeted search queries per sub-question.
+3. Assign a priority (High, Medium, Low) to each sub-question based on its importance to the core query.
+4. Focus strictly on factual, verifiable, data-driven aspects. Do not generate broad or philosophical sub-questions.
 """
 
 PLANNING_USER_PROMPT = """
