@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from deep_research.models import Finding, GapAnalysis
+from deep_research.models import Finding, GapAnalysis, Config
 from deep_research.llm_client import GeminiClient
 
 logger = logging.getLogger(__name__)
@@ -28,8 +28,9 @@ Analyze the gaps and determine if more research is needed.
 """
 
 class GapAnalyzer:
-    def __init__(self, client: GeminiClient):
+    def __init__(self, client: GeminiClient, config: Config):
         self.client = client
+        self.config = config
 
     async def analyze_gaps(self, question: str, findings: List[Finding]) -> GapAnalysis:
         """
@@ -46,7 +47,8 @@ class GapAnalyzer:
             analysis = await self.client.generate_structured(
                 prompt=prompt,
                 response_model=GapAnalysis,
-                system_instruction=GAP_ANALYSIS_SYSTEM_PROMPT
+                system_instruction=GAP_ANALYSIS_SYSTEM_PROMPT,
+                model=self.config.gap_analyzer_model
             )
             return analysis
         except Exception as e:

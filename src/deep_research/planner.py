@@ -1,5 +1,5 @@
 import logging
-from deep_research.models import ResearchPlan, SubQuestion
+from deep_research.models import ResearchPlan, SubQuestion, Config
 from deep_research.llm_client import GeminiClient
 
 logger = logging.getLogger(__name__)
@@ -22,10 +22,10 @@ Research Question: {query}
 Decompose this into a structured research plan.
 """
 
-
 class Planner:
-    def __init__(self, client: GeminiClient):
+    def __init__(self, client: GeminiClient, config: Config):
         self.client = client
+        self.config = config
 
     async def create_plan(self, query: str) -> ResearchPlan:
         """
@@ -38,6 +38,7 @@ class Planner:
                 prompt=prompt,
                 response_model=ResearchPlan,
                 system_instruction=PLANNING_SYSTEM_PROMPT,
+                model=self.config.planner_model,
             )
             return plan
         except Exception as e:

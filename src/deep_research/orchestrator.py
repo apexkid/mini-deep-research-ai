@@ -22,9 +22,9 @@ class Orchestrator:
         self.config = config
         self.client = GeminiClient(config)
         self.extractor = Extractor(self.client, config)
-        self.synthesizer = Synthesizer(self.client)
-        self.planner = Planner(self.client)
-        self.gap_analyzer = GapAnalyzer(self.client)
+        self.synthesizer = Synthesizer(self.client, config)
+        self.planner = Planner(self.client, config)
+        self.gap_analyzer = GapAnalyzer(self.client, config)
         self.visited_urls: Set[str] = set()
         self.search_count = 0
         self.budget_exhausted = False

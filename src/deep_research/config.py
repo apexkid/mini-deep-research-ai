@@ -10,6 +10,10 @@ def load_config(max_searches: int = None, max_depth: int = None) -> Config:
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     tavily_api_key = os.getenv("TAVILY_API_KEY")
     gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    planner_model = os.getenv("PLANNER_MODEL", gemini_model)
+    extractor_model = os.getenv("EXTRACTOR_MODEL", gemini_model)
+    gap_analyzer_model = os.getenv("GAP_ANALYZER_MODEL", gemini_model)
+    synthesizer_model = os.getenv("SYNTHESIZER_MODEL", gemini_model)
     gemini_rpm = int(os.getenv("GEMINI_RPM", "15"))
     max_chars_per_page = int(os.getenv("MAX_CHARS_PER_PAGE", "2000"))
     max_concurrent_fetches = int(os.getenv("MAX_CONCURRENT_FETCHES", "5"))
@@ -28,6 +32,10 @@ def load_config(max_searches: int = None, max_depth: int = None) -> Config:
         gemini_api_key=gemini_api_key,
         tavily_api_key=tavily_api_key,
         gemini_model=gemini_model,
+        planner_model=planner_model,
+        extractor_model=extractor_model,
+        gap_analyzer_model=gap_analyzer_model,
+        synthesizer_model=synthesizer_model,
         gemini_rpm=gemini_rpm,
         max_chars_per_page=max_chars_per_page,
         max_concurrent_fetches=max_concurrent_fetches,

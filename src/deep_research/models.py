@@ -5,6 +5,10 @@ class Config(BaseModel):
     gemini_api_key: str
     tavily_api_key: str
     gemini_model: str = "gemini-2.5-flash"
+    planner_model: Optional[str] = None
+    extractor_model: Optional[str] = None
+    gap_analyzer_model: Optional[str] = None
+    synthesizer_model: Optional[str] = None
     gemini_rpm: int = 15
     max_chars_per_page: int = 8000
     max_concurrent_fetches: int = 5

@@ -62,15 +62,17 @@ class GeminiClient:
         self, 
         prompt: str, 
         system_instruction: Optional[str] = None,
-        config: Optional[types.GenerateContentConfig] = None
+        config: Optional[types.GenerateContentConfig] = None,
+        model: Optional[str] = None
     ) -> str:
         """
         Generates raw text content with rate limiting.
         """
+        current_model = model or self.model_name
         langfuse = get_client()
         langfuse.update_current_generation(
             name="gemini_generate_content",
-            model=self.model_name,
+            model=current_model,
             input=[
                 {"role": "system", "content": system_instruction} if system_instruction else None,
                 {"role": "user", "content": prompt}
@@ -79,7 +81,7 @@ class GeminiClient:
         await self.limiter.wait()
         try:
             response = await self.client.aio.models.generate_content(
-                model=self.model_name,
+                model=current_model,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
@@ -89,7 +91,7 @@ class GeminiClient:
             langfuse.update_current_generation(output=response.text)
             return response.text
         except Exception as e:
-            logger.error(f"Error generating content with Gemini ({self.model_name}): {str(e)}")
+            logger.error(f"Error generating content with Gemini ({current_model}): {str(e)}")
             raise
 
     @observe(as_type="generation")
@@ -104,14 +106,16 @@ class GeminiClient:
         response_model: Type[T],
         system_instruction: Optional[str] = None,
         temperature: Optional[float] = None,
+        model: Optional[str] = None
     ) -> T:
         """
         Generates structured content validated against a Pydantic model with rate limiting.
         """
+        current_model = model or self.model_name
         langfuse = get_client()
         langfuse.update_current_generation(
             name="gemini_generate_structured",
-            model=self.model_name,
+            model=current_model,
             input=[
                 {"role": "system", "content": system_instruction} if system_instruction else None,
                 {"role": "user", "content": prompt}
@@ -128,7 +132,7 @@ class GeminiClient:
             )
             
             response = await self.client.aio.models.generate_content(
-                model=self.model_name,
+                model=current_model,
                 contents=prompt,
                 config=config
             )
@@ -137,5 +141,5 @@ class GeminiClient:
             langfuse.update_current_generation(output=output_val)
             return response.parsed
         except Exception as e:
-            logger.error(f"Error generating structured content with Gemini ({self.model_name}): {str(e)}")
+            logger.error(f"Error generating structured content with Gemini ({current_model}): {str(e)}")
             raise

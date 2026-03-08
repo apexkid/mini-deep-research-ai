@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from deep_research.models import Finding, ResearchReport
+from deep_research.models import Finding, ResearchReport, Config
 from deep_research.llm_client import GeminiClient
 
 logger = logging.getLogger(__name__)
@@ -35,8 +35,9 @@ Write the research report now.
 
 
 class Synthesizer:
-    def __init__(self, client: GeminiClient):
+    def __init__(self, client: GeminiClient, config: Config):
         self.client = client
+        self.config = config
 
     async def synthesize_report(
         self, query: str, findings: List[Finding], budget_exhausted: bool = False
@@ -76,7 +77,9 @@ class Synthesizer:
 
         try:
             report_text = await self.client.generate_content(
-                prompt=prompt, system_instruction=SYNTHESIS_SYSTEM_PROMPT
+                prompt=prompt, 
+                system_instruction=SYNTHESIS_SYSTEM_PROMPT,
+                model=self.config.synthesizer_model
             )
             return report_text
         except Exception as e:

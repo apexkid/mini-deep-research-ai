@@ -80,7 +80,8 @@ class Extractor:
                 prompt=prompt,
                 response_model=FindingList,
                 system_instruction=EXTRACTION_SYSTEM_PROMPT,
-                temperature=0.2 # We will update the client to handle this
+                temperature=0.2, # We will update the client to handle this
+                model=self.config.extractor_model
             )
             
             # Manually attach URL to findings
