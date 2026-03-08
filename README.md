@@ -27,13 +27,6 @@ TAVILY_API_KEY=your_tavily_api_key
 LANGFUSE_SECRET_KEY=sk-lf-...
 LANGFUSE_PUBLIC_KEY=pk-lf-...
 LANGFUSE_HOST=https://cloud.langfuse.com
-
-# Optional: Model Overrides (defaults to gemini-2.5-flash)
-GEMINI_MODEL=gemini-2.5-flash
-PLANNER_MODEL=gemini-2.5-pro
-EXTRACTOR_MODEL=gemini-2.5-flash
-GAP_ANALYZER_MODEL=gemini-2.5-pro
-SYNTHESIZER_MODEL=gemini-2.5-pro
 ```
 
 You can use `.env.example` as a template.
@@ -65,19 +58,29 @@ deep_research "What are the economics of vertical farming in 2025?" --searches 1
 - `QUERY`: The research question or topic you want to investigate.
 
 **Options:**
+- `--model TEXT`: Default Gemini model to use (default: gemini-2.5-flash).
+- `--planner-model TEXT`: Model override for the planning step.
+- `--extractor-model TEXT`: Model override for the extraction step.
+- `--gap-analyzer-model TEXT`: Model override for the gap analysis step.
+- `--synthesizer-model TEXT`: Model override for the synthesis step.
 - `--searches INTEGER`: Maximum total number of searches allowed (default: 30).
 - `--depth INTEGER`: Maximum depth of research iterations per sub-question (default: 2).
+- `--rpm INTEGER`: Gemini API requests per minute limit (default: 15).
+- `--max-chars INTEGER`: Maximum characters to extract per page (default: 8000).
+- `--concurrent INTEGER`: Maximum concurrent page fetches (default: 5).
+- `--timeout INTEGER`: Timeout in seconds for page fetches (default: 10).
 - `--help`: Show this message and exit.
 
-## Advanced Configuration
+## Advanced Model Configuration
 
 The agent allows fine-grained control over which model handles each step of the pipeline. This is useful for using larger models (like Pro) for complex reasoning tasks while keeping extraction fast and cost-effective with smaller models (like Flash).
 
-| Environment Variable | Purpose | Default |
-|---------------------|---------|---------|
-| `PLANNER_MODEL` | Decomposing the query into a research plan. | `GEMINI_MODEL` |
-| `GAP_ANALYZER_MODEL`| Analyzing findings to identify knowledge gaps. | `GEMINI_MODEL` |
-| `SYNTHESIZER_MODEL` | Writing the final comprehensive report. | `GEMINI_MODEL` |
-| `EXTRACTOR_MODEL` | Extracting specific findings from page text. | `GEMINI_MODEL` |
-| `GEMINI_MODEL` | Fallback model for all steps. | `gemini-2.5-flash` |
+Example:
+```bash
+deep_research "Climate change impact" \
+  --planner-model gemini-2.5-pro \
+  --gap-analyzer-model gemini-2.5-pro \
+  --synthesizer-model gemini-2.5-pro \
+  --extractor-model gemini-2.5-flash
+```
 
