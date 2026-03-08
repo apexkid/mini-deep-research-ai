@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "deep_research"
+version = "0.1.0"
+description = "A deep research agent that generates comprehensive reports from web searches."
+authors = [
+    {name = "Adi", email = "adi@example.com"}
+]
+dependencies = [
+    "click>=8.1.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "google-genai>=0.1.0",
+    "aiohttp>=3.8.0",
+    "trafilatura>=1.12.0",
+    "rich>=13.0.0",
+]
+requires-python = ">=3.10"
+
+[project.scripts]
+deep_research = "deep_research.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
